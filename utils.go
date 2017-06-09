@@ -19,6 +19,7 @@ package virtcontainers
 import (
 	"crypto/rand"
 	"fmt"
+	"os"
 	"os/exec"
 )
 
@@ -61,4 +62,18 @@ func reverseString(s string) string {
 	}
 
 	return string(r)
+}
+
+func fileExists(fileName string) (bool, error) {
+	_, err := os.Stat(fileName)
+
+	if err == nil {
+		return true, nil
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, err
 }

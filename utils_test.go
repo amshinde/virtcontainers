@@ -19,6 +19,7 @@ package virtcontainers
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -135,5 +136,36 @@ func TestRevereString(t *testing.T) {
 
 	if reversed != "rtstseT" {
 		t.Fatal("Incorrect String Reversal")
+	}
+}
+
+func TestFileExists(t *testing.T) {
+	fileName := filepath.Join(testDir, "testfooFile")
+	os.Remove(fileName)
+
+	exists, err := fileExists(fileName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if exists {
+		t.Fatal(err)
+	}
+
+	f, err := os.Create(fileName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer f.Close()
+	defer os.Remove(fileName)
+
+	exists, err = fileExists(fileName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal()
 	}
 }

@@ -857,6 +857,19 @@ func (p *Pod) enter(args []string) error {
 	return nil
 }
 
+// isPodCreated checks weather the create phase for the pod has completed.
+// Agent or Hypervisor can use this to perform initialization steps that need to be done just once at the create stage
+func (p *Pod) isPodCreated() (bool, error) {
+
+	// Check for the existence of pod state file that is created at the end of the create stage
+	stateFilePath, _, err := p.storage.podURI(p.id, stateFileType)
+	if err != nil {
+		return false, err
+	}
+
+	return fileExists(stateFilePath)
+}
+
 // setPodState sets both the in-memory and on-disk state of the
 // pod.
 func (p *Pod) setPodState(state State) error {

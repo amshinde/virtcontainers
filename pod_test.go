@@ -989,3 +989,18 @@ func TestPodGetContainer(t *testing.T) {
 		t.Fatalf("Failed to find container %v", contID)
 	}
 }
+
+func TestIsPodCreated(t *testing.T) {
+	hConfig := newHypervisorConfig(nil, nil)
+
+	pod, err := testCreatePod(t, testPodID, MockHypervisor, hConfig, NoopAgentType, NoopNetworkModel, NetworkConfig{}, nil, nil)
+
+	created, err := pod.isPodCreated()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !created {
+		t.Fatal()
+	}
+}

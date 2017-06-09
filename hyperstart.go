@@ -330,6 +330,23 @@ func (h *hyper) init(pod *Pod, config interface{}) (err error) {
 	// Override pod agent configuration
 	pod.config.AgentConfig = h.config
 
+	created, err := pod.isPodCreated()
+	if err != nil {
+		return err
+	}
+
+	if !created {
+		virtLog.Infof("Pod %s has not competed creation yet, adding hypervisor devices", pod.id)
+		if err := h.initDevices(pod); err != nil {
+			return err
+		}
+	}
+
+	h.proxy = pod.proxy
+	return nil
+}
+
+func (h *hyper) initDevices(pod *Pod) error {
 	for _, volume := range h.config.Volumes {
 		err := pod.hypervisor.addDevice(volume, fsDev)
 		if err != nil {
@@ -362,8 +379,6 @@ func (h *hyper) init(pod *Pod, config interface{}) (err error) {
 	if err := pod.addDrives(); err != nil {
 		return err
 	}
-
-	h.proxy = pod.proxy
 
 	return nil
 }
