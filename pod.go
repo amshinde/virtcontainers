@@ -998,6 +998,10 @@ func (p *Pod) checkContainersState(state stateString) error {
 	return nil
 }
 
+// Drive names are dependent on the order in which they are added to the hypervisor options.
+// driveIndex is an incrementing counter used to track the index at which current drive is added to the hypervisor.
+var driveIndex = int(0)
+
 // addDrives can be used to pass block storage devices to the hypervisor in case of devicemapper storage.
 // The container then uses the block device as its rootfs instead of overlay.
 // The container fstype is assigned the file system type of the block device to indicate this.
@@ -1048,7 +1052,15 @@ func (p *Pod) addDrives() error {
 			return err
 		}
 
-		c.fstype = fsType
+		if err := c.setStateBlockIndex(driveIndex); err != nil {
+			return err
+		}
+
+		if err := c.setStateFstype(fsType); err != nil {
+			return err
+		}
+
+		driveIndex = driveIndex + 1
 	}
 	return nil
 }
