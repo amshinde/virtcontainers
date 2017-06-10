@@ -241,16 +241,18 @@ func (c *Container) setContainerState(state stateString) error {
 		return errNeedState
 	}
 
-	// update in-memory state
-	c.state = State{
-		State: state,
-	}
+	// Assign a temp variable to hold current container state
+	var tState State
+	tState.State = state
 
 	// update on-disk state
-	err := c.pod.storage.storeContainerResource(c.podID, c.id, stateFileType, c.state)
+	err := c.pod.storage.storeContainerResource(c.pod.id, c.id, stateFileType, tState)
 	if err != nil {
 		return err
 	}
+
+	// update in-memory state, since write was successful
+	c.state = tState
 
 	return nil
 }
