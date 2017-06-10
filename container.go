@@ -152,6 +152,34 @@ func (c *Container) SetPid(pid int) error {
 	return c.storeProcess()
 }
 
+func (c *Container) setStateBlockIndex(index int) error {
+	tState := c.state
+	tState.BlockIndex = index
+
+	err := c.pod.storage.storeContainerResource(c.pod.id, c.id, stateFileType, tState)
+	if err != nil {
+		return err
+	}
+
+	c.state = tState
+
+	return nil
+}
+
+func (c *Container) setStateFstype(fstype string) error {
+	tState := c.state
+	tState.Fstype = fstype
+
+	err := c.pod.storage.storeContainerResource(c.pod.id, c.id, stateFileType, tState)
+	if err != nil {
+		return err
+	}
+
+	c.state = tState
+
+	return nil
+}
+
 // URL returns the URL related to the pod.
 func (c *Container) URL() string {
 	return c.pod.URL()
