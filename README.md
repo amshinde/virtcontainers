@@ -183,3 +183,17 @@ __Runtime network setup with CNI__
 4. Create bridge, TAP, and link all together with network interface previously created ([code](https://github.com/containers/virtcontainers/blob/0.5.0/network.go#L123-L205))
 
 5. Start VM inside the netns and start the container ([code](https://github.com/containers/virtcontainers/blob/0.5.0/api.go#L66-L70))
+
+## Storage
+
+The container workload is shared with the virtualized environment through 9pfs.
+The devicemapper storage driver is a special case. The driver uses dedicated block devices rather than formatted filesystems, and operates at the block level rather than file level. We use this knowledge to directly use the underlying block device instead of the overlay file system for the container root file system. The block device maps to the top read-write layer for the overlay. This approach gives much better I/O performance as compared to using 9pfs to share the container file system.
+
+The approach above does introduce a limitation in terms of dynamic file copy in/out of the container via docker cp operations:
+
+```
+docker cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH|-
+docker cp [OPTIONS] SRC_PATH|- CONTAINER:DEST_PATH
+```
+
+While the copy to container from host is not expected to work, it is possible to copy files from the container to host. We do need to sync the files to the block device before the copy operation.
