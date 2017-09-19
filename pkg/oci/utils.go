@@ -193,6 +193,57 @@ func containerMounts(spec CompatOCISpec) []vc.Mount {
 	return mnts
 }
 
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func newLinuxDevice(d spec.LinuxDevice) (vc.Device, error) {
+	allowedDeviceTypes := []string{"c", "b", "u", "p"}
+
+	if !contains(allowedDeviceTypes, d.Type) {
+		return vc.Device{}, fmt.Errorf("Unexpected Device Type %s for device %s", d.Type, d.Path)
+	}
+
+	if d.Path == "" {
+		return vc.Device{}, fmt.Errorf("Path cannot be empty for device")
+	}
+
+	return vc.Device{
+		Path:     d.Path,
+		Type:     d.Type,
+		FileMode: d.FileMode,
+		Major:    d.Major,
+		Minor:    d.Minor,
+		UID:      *d.UID,
+		GID:      *d.GID,
+	}, nil
+}
+
+func podDevices(spec CompatOCISpec) ([]vc.Device, error) {
+	ociLinuxDevices := spec.Spec.Linux.Devices
+
+	if ociLinuxDevices == nil {
+		return []vc.Device{}, nil
+	}
+
+	var devices []vc.Device
+	for _, d := range ociLinuxDevices {
+		linuxDevice, err := newLinuxDevice(d)
+		if err != nil {
+			return []vc.Device{}, err
+		}
+
+		devices = append(devices, linuxDevice)
+	}
+
+	return devices, nil
+}
+
 func networkConfig(ocispec CompatOCISpec) (vc.NetworkConfig, error) {
 	linux := ocispec.Linux
 	if linux == nil {
@@ -351,6 +402,11 @@ func PodConfig(ocispec CompatOCISpec, runtime RuntimeConfig, bundlePath, cid, co
 		return vc.PodConfig{}, err
 	}
 
+	devices, err := podDevices(ocispec)
+	if err != nil {
+		return vc.PodConfig{}, err
+	}
+
 	podConfig := vc.PodConfig{
 		ID: cid,
 
@@ -381,6 +437,8 @@ func PodConfig(ocispec CompatOCISpec, runtime RuntimeConfig, bundlePath, cid, co
 			ConfigJSONKey: string(ociSpecJSON),
 			BundlePathKey: bundlePath,
 		},
+
+		Devices: devices,
 	}
 
 	return podConfig, nil

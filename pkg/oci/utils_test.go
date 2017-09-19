@@ -29,6 +29,7 @@ import (
 	vc "github.com/containers/virtcontainers"
 	"github.com/kubernetes-incubator/cri-o/pkg/annotations"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/stretchr/testify/assert"
 )
 
 const tempBundlePath = "/tmp/virtc/ocibundle/"
@@ -152,6 +153,16 @@ func TestMinimalPodConfig(t *testing.T) {
 		Annotations: map[string]string{
 			ConfigJSONKey: string(ociSpecJSON),
 			BundlePathKey: tempBundlePath,
+		},
+		Devices: []vc.Device{
+			{
+				GID:   0,
+				Major: int64(242),
+				Minor: int64(0),
+				Path:  "/dev/vfio/17",
+				Type:  "c",
+				UID:   0,
+			},
 		},
 	}
 
@@ -630,6 +641,47 @@ func TestAddKernelParamInvalid(t *testing.T) {
 	if err == nil {
 		t.Fatal()
 	}
+}
+
+func TestDeviceTypeFailure(t *testing.T) {
+	var ociSpec CompatOCISpec
+
+	invalidDeviceType := "f"
+	ociSpec.Linux = &specs.Linux{}
+	ociSpec.Linux.Devices = []specs.LinuxDevice{
+		{
+			Path: "/dev/vfio",
+			Type: invalidDeviceType,
+		},
+	}
+
+	_, err := podDevices(ociSpec)
+	assert.NotNil(t, err, "This test should fail as device type [%s] is invalid ", invalidDeviceType)
+}
+
+func TestContains(t *testing.T) {
+	s := []string{"char", "block", "pipe"}
+
+	assert.True(t, contains(s, "char"))
+	assert.True(t, contains(s, "pipe"))
+	assert.False(t, contains(s, "chara"))
+	assert.False(t, contains(s, "socket"))
+}
+
+func TestDevicePathEmpty(t *testing.T) {
+	var ociSpec CompatOCISpec
+
+	ociSpec.Linux = &specs.Linux{}
+	ociSpec.Linux.Devices = []specs.LinuxDevice{
+		{
+			Type:  "c",
+			Major: 252,
+			Minor: 1,
+		},
+	}
+
+	_, err := podDevices(ociSpec)
+	assert.NotNil(t, err, "This test should fail as path cannot be empty for device")
 }
 
 func TestMain(m *testing.M) {

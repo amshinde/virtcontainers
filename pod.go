@@ -330,6 +330,12 @@ type PodConfig struct {
 	// Annotations keys must be unique strings and must be name-spaced
 	// with e.g. reverse domain notation (org.clearlinux.key).
 	Annotations map[string]string
+
+	// Devices is a linux specific configuration, these are devices that
+	// must be available within the container.
+	// Appears as a direct child of "linux" object in the OCI json spec.
+	// Note this is different from the devices under "resources".
+	Devices []Device
 }
 
 // valid checks that the pod configuration is valid.
@@ -412,6 +418,8 @@ type Pod struct {
 	lockFile *os.File
 
 	annotationsLock *sync.RWMutex
+
+	devices []Device
 }
 
 // ID returns the pod identifier string.
@@ -581,6 +589,7 @@ func doFetchPod(podConfig PodConfig) (*Pod, error) {
 		configPath:      filepath.Join(configStoragePath, podConfig.ID),
 		state:           State{},
 		annotationsLock: &sync.RWMutex{},
+		devices:         podConfig.Devices,
 	}
 
 	containers, err := newContainers(p, podConfig.Containers)
