@@ -18,6 +18,7 @@ package virtcontainers
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -527,6 +528,11 @@ func createPod(podConfig PodConfig) (*Pod, error) {
 
 	// Below code path is called only during create, because of earlier check.
 	if err := p.agent.createPod(p); err != nil {
+		return nil, err
+	}
+
+	// Passthrough devices
+	if err := p.handleDevices(); err != nil {
 		return nil, err
 	}
 
@@ -1159,6 +1165,44 @@ func togglePausePod(podID string, pause bool) (*Pod, error) {
 	}
 
 	return p, nil
+}
+
+func (p *Pod) handleDevices() error {
+	for _, device := range p.devices {
+		// Handle VFIO devices
+		// TODO Add support for handling devices besides VFIO
+		// Issue: https://github.com/containers/virtcontainers/issues/309
+
+		if device.isVFIODeviceGroup() {
+			vfioGroup := filepath.Base(device.Path)
+			iommuDevicesPath := filepath.Join(sysIOMMUPath, vfioGroup, "devices")
+
+			deviceFiles, err := ioutil.ReadDir(iommuDevicesPath)
+			if err != nil {
+				return err
+			}
+
+			// Pass all devices in iommu group
+			for _, deviceFile := range deviceFiles {
+
+				//Get bdf of device eg 0000:00:1c.0
+				deviceBDF, err := bdf(deviceFile.Name())
+				if err != nil {
+					return err
+				}
+
+				vfioDevice := VFIODevice{
+					BDF: deviceBDF,
+				}
+
+				if err := p.hypervisor.addDevice(vfioDevice, vfioDev); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // addDrives can be used to pass block storage devices to the hypervisor in case of devicemapper storage.

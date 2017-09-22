@@ -1235,3 +1235,43 @@ func TestContainerStateSetFstype(t *testing.T) {
 		t.Fatal()
 	}
 }
+
+func TestPodHandleDevices(t *testing.T) {
+	hConfig := newHypervisorConfig(nil, nil)
+	p, err := testCreatePod(t, testPodID, MockHypervisor, hConfig, NoopAgentType, NoopNetworkModel, NetworkConfig{}, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tmpDir, err := ioutil.TempDir("", "")
+	assert.Nil(t, err)
+	os.RemoveAll(tmpDir)
+
+	testFDIOGroup := "2"
+	testDeviceBDFPath := "0000:00:1c.0"
+
+	devicesDir := filepath.Join(tmpDir, testFDIOGroup, "devices")
+	err = os.MkdirAll(devicesDir, dirMode)
+	assert.Nil(t, err)
+
+	deviceFile := filepath.Join(devicesDir, testDeviceBDFPath)
+	_, err = os.Create(deviceFile)
+	assert.Nil(t, err)
+
+	savedIOMMUPath := sysIOMMUPath
+	sysIOMMUPath = tmpDir
+
+	defer func() {
+		sysIOMMUPath = savedIOMMUPath
+	}()
+
+	p.devices = []Device{
+		{
+			Path: filepath.Join(vfioPath, testFDIOGroup),
+			Type: "c",
+		},
+	}
+
+	err = p.handleDevices()
+	assert.Nil(t, err, "Error while handling pod devices %s", err)
+}
