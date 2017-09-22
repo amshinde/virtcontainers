@@ -45,3 +45,10 @@ type Device struct {
 	// id of the device group.
 	GID uint32
 }
+
+// VFIODevice is a vfio device meant to be passed to the hypervisor
+// to be used by the Virtual Machine.
+type VFIODevice struct {
+	// Bus-Device-Function for pci device
+	BDF string
+}
