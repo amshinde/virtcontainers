@@ -36,12 +36,19 @@ func (n *cni) addVirtInterfaces(networkNS *NetworkNamespace) error {
 	}
 
 	for idx, endpoint := range networkNS.Endpoints {
-		result, err := netPlugin.AddNetwork(endpoint.NetPair.ID, networkNS.NetNsPath, endpoint.NetPair.VirtIface.Name)
+		virtualEndpoint, ok := endpoint.(*VirtualEndpoint)
+
+		if !ok {
+			continue
+		}
+
+		result, err := netPlugin.AddNetwork(virtualEndpoint.NetPair.ID, networkNS.NetNsPath, virtualEndpoint.NetPair.VirtIface.Name)
 		if err != nil {
 			return err
 		}
 
-		networkNS.Endpoints[idx].Properties = *result
+		virtualEndpoint.SetProperties(*result)
+		networkNS.Endpoints[idx] = virtualEndpoint
 
 		n.Logger().Infof("AddNetwork results %v", *result)
 	}
@@ -56,9 +63,12 @@ func (n *cni) deleteVirtInterfaces(networkNS NetworkNamespace) error {
 	}
 
 	for _, endpoint := range networkNS.Endpoints {
-		err := netPlugin.RemoveNetwork(endpoint.NetPair.ID, networkNS.NetNsPath, endpoint.NetPair.VirtIface.Name)
-		if err != nil {
-			return err
+		if endpoint.GetType() == VirtualEndpointType {
+			virtualEndpoint := endpoint.(*VirtualEndpoint)
+			err := netPlugin.RemoveNetwork(virtualEndpoint.NetPair.ID, networkNS.NetNsPath, virtualEndpoint.NetPair.VirtIface.Name)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
