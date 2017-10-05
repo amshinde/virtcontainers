@@ -78,3 +78,19 @@ func cleanupFds(fds []*os.File, numFds int) {
 		_ = fds[i].Close()
 	}
 }
+
+// writeToFile opens a file in write only mode and writes bytes to it
+func writeToFile(path string, data []byte) error {
+	f, err := os.OpenFile(path, os.O_WRONLY, 0755)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	if _, err := f.Write(data); err != nil {
+		return err
+	}
+
+	return nil
+}
