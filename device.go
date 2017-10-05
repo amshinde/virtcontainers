@@ -28,9 +28,9 @@ import (
 )
 
 const (
-	deviceVFIO    = "vfio"
-	deviceBlock   = "block"
-	deviceGeneric = "generic"
+	DeviceVFIO    = "vfio"
+	DeviceBlock   = "block"
+	DeviceGeneric = "generic"
 )
 
 // Defining this as a variable instead of a const, to allow
@@ -141,7 +141,7 @@ type VFIODevice struct {
 
 func newVFIODevice(devInfo DeviceInfo) *VFIODevice {
 	return &VFIODevice{
-		DeviceType: deviceVFIO,
+		DeviceType: DeviceVFIO,
 		DeviceInfo: devInfo,
 	}
 }
@@ -186,7 +186,7 @@ type BlockDevice struct {
 
 func newBlockDevice(devInfo DeviceInfo) *BlockDevice {
 	return &BlockDevice{
-		DeviceType: deviceBlock,
+		DeviceType: DeviceBlock,
 		DeviceInfo: devInfo,
 	}
 }
@@ -207,7 +207,7 @@ type GenericDevice struct {
 
 func newGenericDevice(devInfo DeviceInfo) *GenericDevice {
 	return &GenericDevice{
-		DeviceType: deviceGeneric,
+		DeviceType: DeviceGeneric,
 		DeviceInfo: devInfo,
 	}
 }
