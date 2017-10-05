@@ -28,6 +28,7 @@ import (
 	types "github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/containers/virtcontainers/pkg/uuid"
+	"github.com/safchain/ethtool"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 )
@@ -818,6 +819,32 @@ func getNetIfaceByName(name string, netIfaces []netIfaceAddrs) (net.Interface, e
 	}
 
 	return net.Interface{}, fmt.Errorf("Could not find the interface %s in the list", name)
+}
+
+// checkPhysicalIface checks if an interface is a physical device.
+// We use ethtool here to not rely on device sysfs inside the network namespace.
+func checkPhysicalIface(ifaceName string) bool {
+	if ifaceName == "lo" {
+		return false
+	}
+
+	ethHandle, err := ethtool.NewEthtool()
+	if err != nil {
+		return false
+	}
+
+	bus, err := ethHandle.BusInfo(ifaceName)
+	if err != nil {
+		return false
+	}
+
+	// Check for a pci bus format
+	tokens := strings.Split(bus, ":")
+	if len(tokens) != 3 {
+		return false
+	}
+
+	return true
 }
 
 func addNetDevHypervisor(pod Pod, endpoints []Endpoint) error {
