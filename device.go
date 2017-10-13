@@ -57,7 +57,7 @@ const (
 
 // Device is the virtcontainers device interface.
 type Device interface {
-	attach(hypervisor) error
+	attach(hypervisor, *Container, bool) error
 	detach(hypervisor) error
 	deviceType() string
 }
@@ -89,6 +89,10 @@ type DeviceInfo struct {
 
 	// id of the device group.
 	GID uint32
+
+	// Hotplugged is used to store device state indicating if the
+	// device was hotplugged.
+	Hotplugged bool
 }
 
 // VFIODevice is a vfio device meant to be passed to the hypervisor
@@ -106,7 +110,7 @@ func newVFIODevice(devInfo DeviceInfo) *VFIODevice {
 	}
 }
 
-func (device *VFIODevice) attach(h hypervisor) error {
+func (device *VFIODevice) attach(h hypervisor, c *Container, create bool) error {
 	vfioGroup := filepath.Base(device.DeviceInfo.HostPath)
 	iommuDevicesPath := filepath.Join(sysIOMMUPath, vfioGroup, "devices")
 
@@ -158,7 +162,7 @@ func newBlockDevice(devInfo DeviceInfo) *BlockDevice {
 	}
 }
 
-func (device *BlockDevice) attach(h hypervisor) error {
+func (device *BlockDevice) attach(h hypervisor, c *Container, create bool) error {
 	return nil
 }
 
@@ -183,7 +187,7 @@ func newGenericDevice(devInfo DeviceInfo) *GenericDevice {
 	}
 }
 
-func (device *GenericDevice) attach(h hypervisor) error {
+func (device *GenericDevice) attach(h hypervisor, c *Container, create bool) error {
 	return nil
 }
 

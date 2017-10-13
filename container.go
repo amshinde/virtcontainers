@@ -517,7 +517,7 @@ func (c *Container) start() error {
 	}
 
 	// Attach devices
-	if err := c.attachDevices(); err != nil {
+	if err := c.attachDevices(false); err != nil {
 		return err
 	}
 
@@ -824,9 +824,9 @@ func (c *Container) removeDrive() (err error) {
 	return nil
 }
 
-func (c *Container) attachDevices() error {
+func (c *Container) attachDevices(create bool) error {
 	for _, device := range c.devices {
-		if err := device.attach(c.pod.hypervisor); err != nil {
+		if err := device.attach(c.pod.hypervisor, c, create); err != nil {
 			return err
 		}
 	}
