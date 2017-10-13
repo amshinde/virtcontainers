@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/01org/ciao/ssntp/uuid"
 	"github.com/go-ini/ini"
 )
 
@@ -93,6 +94,9 @@ type DeviceInfo struct {
 	// Hotplugged is used to store device state indicating if the
 	// device was hotplugged.
 	Hotplugged bool
+
+	// ID for the device that is passed to the hypervisor.
+	ID string
 }
 
 // VFIODevice is a vfio device meant to be passed to the hypervisor
@@ -162,11 +166,57 @@ func newBlockDevice(devInfo DeviceInfo) *BlockDevice {
 	}
 }
 
+func makeBlockDevIDForHypervisor(deviceID string) string {
+	return fmt.Sprintf("drive-%s", deviceID)
+}
+
 func (device *BlockDevice) attach(h hypervisor, c *Container, create bool) error {
+	device.DeviceInfo.ID = uuid.Generate().String()
+
+	drive := Drive{
+		File:   device.DeviceInfo.HostPath,
+		Format: "raw",
+		ID:     makeBlockDevIDForHypervisor(device.DeviceInfo.ID),
+	}
+
+	// Increment the block index for the pod. This is used to determine the name
+	// for the block device in the case where the block device is used as container
+	// rootfs and the predicted block device name needs to be provided to the agent.
+	_, err := c.pod.getAndSetPodBlockIndex()
+	if err != nil {
+		return err
+	}
+
+	virtLog.Infof("Attaching block device %s", device.DeviceInfo.HostPath)
+	if create {
+		if err := h.addDevice(drive, blockDev); err != nil {
+			return err
+		}
+		device.DeviceInfo.Hotplugged = false
+	} else {
+		if err := h.hotplugAddDevice(drive, blockDev); err != nil {
+			return err
+		}
+		device.DeviceInfo.Hotplugged = true
+	}
+
 	return nil
 }
 
 func (device BlockDevice) detach(h hypervisor) error {
+	if device.DeviceInfo.Hotplugged {
+		virtLog.Infof("Unplugging block device %s", device.DeviceInfo.HostPath)
+
+		drive := Drive{
+			ID: makeBlockDevIDForHypervisor(device.DeviceInfo.ID),
+		}
+
+		if err := h.hotplugRemoveDevice(drive, blockDev); err != nil {
+			virtLog.Errorf("Error while unplugging block device : %s", err)
+			return err
+		}
+
+	}
 	return nil
 }
 
