@@ -24,7 +24,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/01org/ciao/ssntp/uuid"
+	"github.com/containers/virtcontainers/pkg/uuid"
+
 	"github.com/go-ini/ini"
 )
 
@@ -160,6 +161,7 @@ type BlockDevice struct {
 }
 
 func newBlockDevice(devInfo DeviceInfo) *BlockDevice {
+	virtLog.Infof("************Creating block device\n")
 	return &BlockDevice{
 		DeviceType: DeviceBlock,
 		DeviceInfo: devInfo,
@@ -173,6 +175,7 @@ func makeBlockDevIDForHypervisor(deviceID string) string {
 func (device *BlockDevice) attach(h hypervisor, c *Container, create bool) error {
 	device.DeviceInfo.ID = uuid.Generate().String()
 
+	virtLog.Infof("***********attaching block device")
 	drive := Drive{
 		File:   device.DeviceInfo.HostPath,
 		Format: "raw",
@@ -182,23 +185,38 @@ func (device *BlockDevice) attach(h hypervisor, c *Container, create bool) error
 	// Increment the block index for the pod. This is used to determine the name
 	// for the block device in the case where the block device is used as container
 	// rootfs and the predicted block device name needs to be provided to the agent.
-	_, err := c.pod.getAndSetPodBlockIndex()
+	index, err := c.pod.getAndSetPodBlockIndex()
+	if err != nil {
+		return err
+	}
+
+	driveName, err := getVirtDriveName(index)
 	if err != nil {
 		return err
 	}
 
 	virtLog.Infof("Attaching block device %s", device.DeviceInfo.HostPath)
 	if create {
+		virtLog.Infof("**********Adding block device : %s", drive.ID)
 		if err := h.addDevice(drive, blockDev); err != nil {
 			return err
 		}
 		device.DeviceInfo.Hotplugged = false
 	} else {
+		virtLog.Infof("**********Hotplugging  block device : %s", drive.ID)
 		if err := h.hotplugAddDevice(drive, blockDev); err != nil {
 			return err
 		}
 		device.DeviceInfo.Hotplugged = true
 	}
+
+	f := FsmapEntry{
+		AbsolutePath: true,
+		Source:       filepath.Join("/dev", driveName),
+		Dest:         device.DeviceInfo.ContainerPath,
+	}
+
+	c.Fsmap = append(c.Fsmap, f)
 
 	return nil
 }

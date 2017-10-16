@@ -97,6 +97,15 @@ func (c *ContainerConfig) valid() bool {
 	return true
 }
 
+// FsmapEntry describes a filesytem map entry related to a container.
+type FsmapEntry struct {
+	Source       string
+	Dest         string
+	ReadOnly     string
+	Permissions  string
+	AbsolutePath bool
+}
+
 // Container is composed of a set of containers and a runtime environment.
 // A Container can be created, deleted, started, stopped, listed, entered, paused and restored.
 type Container struct {
@@ -120,6 +129,8 @@ type Container struct {
 	mounts []Mount
 
 	devices []Device
+
+	Fsmap []FsmapEntry
 }
 
 // ID returns the container identifier string.

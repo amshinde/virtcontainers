@@ -123,6 +123,7 @@ type FsmapDescriptor struct {
 	Path         string `json:"path"`
 	ReadOnly     bool   `json:"readOnly"`
 	DockerVolume bool   `json:"dockerVolume"`
+	AbsolutePath bool   `json:"absolutePath"`
 }
 
 // EnvironmentVar holds an environment variable and its value.

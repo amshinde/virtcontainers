@@ -541,6 +541,18 @@ func (h *hyper) startOneContainer(pod Pod, c Container) error {
 		return err
 	}
 
+	// Append the container mounts for --device
+	for _, f := range c.Fsmap {
+		fsmapDesc := &hyperstart.FsmapDescriptor{
+			Source:       f.Source,
+			Path:         f.Dest,
+			AbsolutePath: f.AbsolutePath,
+			DockerVolume: false,
+		}
+
+		fsmap = append(fsmap, fsmapDesc)
+	}
+
 	// Assign fsmap for hyperstart to mount these at the correct location within the container
 	container.Fsmap = fsmap
 
