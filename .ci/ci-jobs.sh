@@ -22,8 +22,8 @@ export CI=true
 
 make check
 
-sudo -E go test -bench=.
+sudo  go test -bench=.
 
-sudo -E go test -bench=CreateStartStopDeletePodQemuHypervisorNoopAgentNetworkCNI -benchtime=60s
+sudo  go test -bench=CreateStartStopDeletePodQemuHypervisorNoopAgentNetworkCNI -benchtime=60s
 
-sudo -E go test -bench=CreateStartStopDeletePodQemuHypervisorHyperstartAgentNetworkCNI -benchtime=60s
+sudo  go test -bench=CreateStartStopDeletePodQemuHypervisorHyperstartAgentNetworkCNI -benchtime=60s
