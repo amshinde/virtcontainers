@@ -175,7 +175,8 @@ func (h *hyper) buildNetworkInterfacesAndRoutes(pod Pod) ([]hyperstart.NetworkIf
 	for _, endpoint := range networkNS.Endpoints {
 		var netIface net.Interface
 
-		if endpoint.GetType() == VirtualEndpointType {
+		endpointType := endpoint.GetType()
+		if endpointType == VirtualEndpointType {
 			netIface, err = getNetIfaceByName(endpoint.GetName(), netIfaces)
 			if err != nil {
 				return []hyperstart.NetworkIface{}, []hyperstart.Route{}, err
@@ -205,8 +206,10 @@ func (h *hyper) buildNetworkInterfacesAndRoutes(pod Pod) ([]hyperstart.NetworkIf
 			MACAddr:     endpoint.GetHardwareAddr(),
 		}
 
-		if endpoint.GetType() == VirtualEndpointType {
+		if endpointType == VirtualEndpointType {
 			iface.MTU = netIface.MTU
+		} else if endpointType == PhysicalEndpointType {
+			iface.MTU = endpoint.(*PhysicalEndpoint).MTU
 		}
 
 		ifaces = append(ifaces, iface)
