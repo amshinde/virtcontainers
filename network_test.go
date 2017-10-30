@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/containernetworking/plugins/pkg/ns"
+	"github.com/stretchr/testify/assert"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
@@ -139,7 +140,7 @@ func TestCreateDeleteNetNS(t *testing.T) {
 	}
 }
 
-func TestCreateNetworkEndpoint(t *testing.T) {
+func TestCreateVirtualNetworkEndpoint(t *testing.T) {
 	macAddr := net.HardwareAddr{0x02, 0x00, 0xCA, 0xFE, 0x00, 0x04}
 
 	expected := &VirtualEndpoint{
@@ -157,7 +158,7 @@ func TestCreateNetworkEndpoint(t *testing.T) {
 		Type: VirtualEndpointType,
 	}
 
-	result, err := createNetworkEndpoint(4, "uniqueTestID", "")
+	result, err := createVirtualNetworkEndpoint(4, "uniqueTestID", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +168,7 @@ func TestCreateNetworkEndpoint(t *testing.T) {
 	}
 }
 
-func TestCreateNetworkEndpointChooseIfaceName(t *testing.T) {
+func TestCreateVirtualNetworkEndpointChooseIfaceName(t *testing.T) {
 	macAddr := net.HardwareAddr{0x02, 0x00, 0xCA, 0xFE, 0x00, 0x04}
 
 	expected := &VirtualEndpoint{
@@ -185,7 +186,7 @@ func TestCreateNetworkEndpointChooseIfaceName(t *testing.T) {
 		Type: VirtualEndpointType,
 	}
 
-	result, err := createNetworkEndpoint(4, "uniqueTestID", "eth1")
+	result, err := createVirtualNetworkEndpoint(4, "uniqueTestID", "eth1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +196,7 @@ func TestCreateNetworkEndpointChooseIfaceName(t *testing.T) {
 	}
 }
 
-func TestCreateNetworkEndpointInvalidArgs(t *testing.T) {
+func TestCreateVirtualNetworkEndpointInvalidArgs(t *testing.T) {
 	type endpointValues struct {
 		idx      int
 		uniqueID string
@@ -215,7 +216,7 @@ func TestCreateNetworkEndpointInvalidArgs(t *testing.T) {
 	}
 
 	for _, d := range failingValues {
-		result, err := createNetworkEndpoint(d.idx, d.uniqueID, d.ifName)
+		result, err := createVirtualNetworkEndpoint(d.idx, d.uniqueID, d.ifName)
 		if err == nil {
 			t.Fatalf("expected invalid endpoint for %v, got %v", d, result)
 		}
