@@ -19,6 +19,7 @@ package virtcontainers
 import (
 	"encoding/hex"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -172,9 +173,13 @@ func (h *hyper) buildNetworkInterfacesAndRoutes(pod Pod) ([]hyperstart.NetworkIf
 	var ifaces []hyperstart.NetworkIface
 	var routes []hyperstart.Route
 	for _, endpoint := range networkNS.Endpoints {
-		netIface, err := getNetIfaceByName(endpoint.GetName(), netIfaces)
-		if err != nil {
-			return []hyperstart.NetworkIface{}, []hyperstart.Route{}, err
+		var netIface net.Interface
+
+		if endpoint.GetType() == VirtualEndpointType {
+			netIface, err = getNetIfaceByName(endpoint.GetName(), netIfaces)
+			if err != nil {
+				return []hyperstart.NetworkIface{}, []hyperstart.Route{}, err
+			}
 		}
 
 		var ipAddrs []hyperstart.IPAddress
@@ -197,8 +202,11 @@ func (h *hyper) buildNetworkInterfacesAndRoutes(pod Pod) ([]hyperstart.NetworkIf
 		iface := hyperstart.NetworkIface{
 			NewDevice:   endpoint.GetName(),
 			IPAddresses: ipAddrs,
-			MTU:         netIface.MTU,
 			MACAddr:     endpoint.GetHardwareAddr(),
+		}
+
+		if endpoint.GetType() == VirtualEndpointType {
+			iface.MTU = netIface.MTU
 		}
 
 		ifaces = append(ifaces, iface)
