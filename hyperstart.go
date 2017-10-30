@@ -209,7 +209,11 @@ func (h *hyper) buildNetworkInterfacesAndRoutes(pod Pod) ([]hyperstart.NetworkIf
 		if endpointType == VirtualEndpointType {
 			iface.MTU = netIface.MTU
 		} else if endpointType == PhysicalEndpointType {
-			iface.MTU = endpoint.(*PhysicalEndpoint).MTU
+			ep, ok := endpoint.(*PhysicalEndpoint)
+			if ok {
+				virtLog.Infof("MTU: %v", ep.MTU)
+				iface.MTU = ep.MTU
+			}
 		}
 
 		ifaces = append(ifaces, iface)
