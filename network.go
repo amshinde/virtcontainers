@@ -131,7 +131,6 @@ type PhysicalEndpoint struct {
 	BDF            string
 	Driver         string
 	VendorDeviceID string
-	VFIODevice
 }
 
 // GetProperties returns properties for the veth interface in the network pair.
