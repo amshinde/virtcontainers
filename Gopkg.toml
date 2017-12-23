@@ -121,10 +121,6 @@
   revision = "86bef332bfc3b59b7624a600bd53009ce91a9829"
 
 [[constraint]]
-  name = "golang.org/x/crypto"
-  revision = "76eec36fa14229c4b25bb894c2d0e591527af429"
-
-[[constraint]]
   name = "golang.org/x/sys"
   revision = "314a259e304ff91bd6985da2a7149bbf91237993"
 
